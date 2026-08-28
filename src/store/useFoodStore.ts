@@ -9,10 +9,26 @@ const getStoredProducts = (): Product[] => {
   try {
     const raw = localStorage.getItem(PRODUCTS_DB_KEY);
     if (raw) {
-      return JSON.parse(raw);
+      const stored: Product[] = JSON.parse(raw);
+      if (Array.isArray(stored)) {
+        // Merge so any new initial products are always included
+        const existingIds = new Set(stored.map((p) => p.id));
+        const missingInitial = INITIAL_PRODUCTS.filter((p) => !existingIds.has(p.id));
+        if (missingInitial.length > 0) {
+          const merged = [...stored, ...missingInitial];
+          localStorage.setItem(PRODUCTS_DB_KEY, JSON.stringify(merged));
+          return merged;
+        }
+        return stored;
+      }
     }
   } catch (e) {
     console.warn('Failed to load local products:', e);
+  }
+  try {
+    localStorage.setItem(PRODUCTS_DB_KEY, JSON.stringify(INITIAL_PRODUCTS));
+  } catch {
+    // ignore
   }
   return INITIAL_PRODUCTS;
 };
@@ -62,7 +78,7 @@ export const useFoodStore = create<FoodState>((set, get) => ({
   searchQuery: '',
   filterVeg: false,
   filterSpicy: false,
-  filterMaxPrice: 35,
+  filterMaxPrice: 45,
   filterMinRating: 0,
   isFilterModalOpen: false,
   selectedDetailProduct: null,
@@ -114,7 +130,7 @@ export const useFoodStore = create<FoodState>((set, get) => ({
       searchQuery: '',
       filterVeg: false,
       filterSpicy: false,
-      filterMaxPrice: 35,
+      filterMaxPrice: 45,
       filterMinRating: 0,
     }),
 

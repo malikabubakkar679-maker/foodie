@@ -113,21 +113,6 @@ export const AuthModal: React.FC = () => {
     setAuthError('');
     try {
       const user = await login(data.email, data.password);
-      
-      // Auto-redirect admin to Admin Center
-      if (user.role === 'admin' || user.email.toLowerCase() === 'admin@foodie.com') {
-        showToast({
-          title: `Welcome, Master Admin! ⚡`,
-          message: 'Redirecting to Foodie Admin Center...',
-          type: 'order_confirmed',
-          icon: '⚡',
-        });
-        resetLoginForm();
-        closeAuthModal();
-        navigate('/admin');
-        return;
-      }
-
       showToast({
         title: `Welcome back, ${user.fullName.split(' ')[0]}! 👋`,
         message: 'You have signed in to Foodie successfully.',
@@ -145,20 +130,6 @@ export const AuthModal: React.FC = () => {
     try {
       const user = await register(data.fullName, data.email, data.phone, data.password);
       triggerCelebration();
-
-      // Auto-redirect admin if registering admin email
-      if (user.role === 'admin' || user.email.toLowerCase() === 'admin@foodie.com') {
-        showToast({
-          title: `Welcome, Master Admin! ⚡`,
-          message: 'Redirecting to Foodie Admin Center...',
-          type: 'order_confirmed',
-          icon: '⚡',
-        });
-        resetRegForm();
-        closeAuthModal();
-        navigate('/admin');
-        return;
-      }
 
       showToast({
         title: `Welcome to Foodie, ${user.fullName.split(' ')[0]}! 🎉`,

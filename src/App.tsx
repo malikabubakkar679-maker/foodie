@@ -10,7 +10,6 @@ import { OrdersPage } from '@/pages/OrdersPage';
 import { ChatPage } from '@/pages/ChatPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
-import { AdminPage } from '@/pages/AdminPage';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export const App: React.FC = () => {
@@ -24,7 +23,6 @@ export const App: React.FC = () => {
 
   const handleSplashComplete = () => {
     setShowSplash(false);
-    // Onboarding slider screen
     setShowOnboarding(true);
   };
 
@@ -43,10 +41,7 @@ export const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Standalone Full-Bleed Admin Center */}
-        <Route path="/admin" element={<AdminPage />} />
-
-        {/* Customer Storefront Shell */}
+        {/* Customer User Foodie Application Shell */}
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="search" element={<SearchPage />} />
