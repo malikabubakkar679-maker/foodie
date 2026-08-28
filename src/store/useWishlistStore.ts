@@ -4,6 +4,7 @@ interface WishlistState {
   favoriteIds: Set<string>;
   toggleFavorite: (productId: string) => boolean;
   isFavorite: (productId: string) => boolean;
+  clearFavorites: () => void;
   getFavoritesCount: () => number;
 }
 
@@ -26,6 +27,10 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
 
   isFavorite: (productId: string) => {
     return get().favoriteIds.has(productId);
+  },
+
+  clearFavorites: () => {
+    set({ favoriteIds: new Set() });
   },
 
   getFavoritesCount: () => {

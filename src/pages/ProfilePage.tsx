@@ -23,6 +23,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 export const ProfilePage: React.FC = () => {
@@ -116,16 +117,17 @@ export const ProfilePage: React.FC = () => {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="max-w-md mx-auto my-6 space-y-4">
-        <button
+      <div className="w-full max-w-md mx-auto my-6 space-y-4 select-none">
+        <motion.button
+          whileTap={{ scale: 0.92 }}
           onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-2xl bg-white border border-foodie-border flex items-center justify-center text-foodie-charcoal hover:bg-foodie-yellow-soft shadow-xs transition-all shrink-0 active:scale-95"
+          className="w-11 h-11 rounded-2xl bg-white/90 backdrop-blur-xl border border-white/80 flex items-center justify-center text-foodie-charcoal hover:bg-foodie-yellow shadow-xs transition-all shrink-0"
           aria-label="Go Back"
         >
           <ArrowLeft className="w-5 h-5" />
-        </button>
+        </motion.button>
 
-        <div className="bg-white/75 backdrop-blur-2xl border border-white/80 rounded-3xl p-8 sm:p-10 text-center space-y-6 shadow-2xl">
+        <div className="bg-white/85 backdrop-blur-2xl border border-white/90 rounded-3xl p-8 sm:p-10 text-center space-y-6 shadow-xl">
           <div className="w-20 h-20 bg-gradient-to-tr from-foodie-yellow to-foodie-orange rounded-3xl flex items-center justify-center text-4xl mx-auto shadow-lg shadow-foodie-yellow/30">
             👤
           </div>
@@ -150,22 +152,29 @@ export const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-5 max-w-4xl mx-auto pb-10">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="space-y-6 w-full max-w-5xl mx-auto pb-12 select-none"
+    >
       {/* Top Header Row with Back Button */}
       <div className="flex items-center gap-3">
-        <button
+        <motion.button
+          whileTap={{ scale: 0.92 }}
           onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-2xl bg-white border border-foodie-border flex items-center justify-center text-foodie-charcoal hover:bg-foodie-yellow-soft shadow-xs transition-all shrink-0 active:scale-95"
+          className="w-11 h-11 rounded-2xl bg-white/90 backdrop-blur-xl border border-white/80 flex items-center justify-center text-foodie-charcoal hover:bg-foodie-yellow shadow-xs transition-all shrink-0"
           aria-label="Go Back"
         >
           <ArrowLeft className="w-5 h-5" />
-        </button>
+        </motion.button>
         <div>
-          <h2 className="text-2xl sm:text-3xl font-black text-foodie-charcoal tracking-tight">
-            Account Profile 👤
-          </h2>
-          <p className="text-xs text-foodie-muted font-bold mt-0.5">
-            Manage your personal details, wallet & payment methods
+          <h1 className="text-2xl sm:text-4xl font-black text-foodie-charcoal tracking-tight flex items-center gap-2">
+            <span>Account Profile</span>
+            <span>👤</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-foodie-muted font-bold mt-0.5">
+            Manage your personal details, wallet, addresses & payment methods
           </p>
         </div>
       </div>
@@ -590,6 +599,6 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
