@@ -31,40 +31,51 @@ export const CategoryBar: React.FC = () => {
   const { categories, selectedCategory, setSelectedCategory } = useFoodStore();
 
   return (
-    <section className="py-4">
-      <div className="flex items-center justify-between mb-3">
+    <section className="py-2 sm:py-3">
+      <div className="flex items-center justify-between mb-2 sm:mb-2.5">
         <h3 className="text-lg sm:text-xl font-extrabold text-foodie-charcoal tracking-tight">
-          Explore Categories
+          Explore Categories 🍕
         </h3>
       </div>
 
       {/* Horizontal Scroll Track */}
-      <div className="flex items-center gap-3 overflow-x-auto pb-3 pt-1 scrollbar-none select-none">
-        {categories.map((cat) => {
+      <div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1 scrollbar-none select-none">
+        {categories.map((cat, index) => {
           const IconComponent = ICON_MAP[cat.icon] || Flame;
           const isSelected = selectedCategory === cat.id;
 
           return (
             <motion.button
               key={cat.id}
-              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.04, type: 'spring', damping: 20, stiffness: 300 }}
+              whileHover={{ y: -4, scale: 1.04 }}
+              whileTap={{ scale: 0.94 }}
               onClick={() => setSelectedCategory(cat.id)}
               className={cn(
-                'flex flex-col items-center gap-2 px-4 py-3 rounded-2xl border transition-all shrink-0 min-w-[85px] shadow-sm',
+                'flex flex-col items-center gap-2 px-4 py-2.5 sm:py-3 rounded-2xl border transition-all shrink-0 min-w-[86px] shadow-2xs relative',
                 isSelected
-                  ? 'bg-foodie-yellow border-foodie-yellow-dark shadow-foodie-glow -translate-y-0.5'
-                  : 'bg-white border-foodie-border hover:border-foodie-yellow/60 hover:bg-foodie-yellow-soft/50'
+                  ? 'bg-gradient-to-b from-foodie-yellow via-[#FFB800] to-foodie-amber-dark border-foodie-yellow-dark text-foodie-charcoal shadow-foodie-glow'
+                  : 'bg-white/80 backdrop-blur-md border-white/90 hover:border-foodie-yellow/60 hover:bg-foodie-yellow-soft/50'
               )}
             >
               <div
                 className={cn(
-                  'w-10 h-10 rounded-xl flex items-center justify-center transition-colors',
-                  isSelected ? 'bg-white text-foodie-charcoal shadow-sm' : 'bg-foodie-app text-foodie-muted'
+                  'w-10 h-10 rounded-xl flex items-center justify-center transition-all',
+                  isSelected
+                    ? 'bg-white text-foodie-charcoal shadow-sm scale-105'
+                    : 'bg-foodie-app text-foodie-muted group-hover:text-foodie-charcoal'
                 )}
               >
-                <IconComponent className="w-5 h-5" />
+                <IconComponent className={cn('w-5 h-5 transition-transform', isSelected && 'scale-110')} />
               </div>
-              <span className="text-xs font-extrabold text-foodie-charcoal whitespace-nowrap">
+              <span
+                className={cn(
+                  'text-xs whitespace-nowrap tracking-tight',
+                  isSelected ? 'font-black text-foodie-charcoal' : 'font-bold text-foodie-charcoal/85'
+                )}
+              >
                 {cat.name}
               </span>
             </motion.button>

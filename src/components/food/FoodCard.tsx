@@ -6,6 +6,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { useWishlistStore } from '@/store/useWishlistStore';
 import { useCartStore } from '@/store/useCartStore';
 import { useFoodStore } from '@/store/useFoodStore';
+import { useNotificationStore } from '@/store/useNotificationStore';
 
 interface FoodCardProps {
   product: Product;
@@ -15,16 +16,39 @@ export const FoodCard: React.FC<FoodCardProps> = ({ product }) => {
   const { toggleFavorite, isFavorite } = useWishlistStore();
   const quickAdd = useCartStore((s) => s.quickAdd);
   const openDetailModal = useFoodStore((s) => s.openDetailModal);
+  const showToast = useNotificationStore((s) => s.showToast);
   const isFav = isFavorite(product.id);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleFavorite(product.id);
+    const added = toggleFavorite(product.id);
+    if (added) {
+      showToast({
+        title: 'Added to Wishlist! ❤️',
+        message: `${product.name} saved to your favorites.`,
+        type: 'deal',
+        icon: '❤️',
+      });
+    } else {
+      showToast({
+        title: 'Removed from Wishlist',
+        message: `${product.name} removed from your favorites.`,
+        type: 'deal',
+        icon: '🤍',
+      });
+    }
   };
 
   const handleQuickAddClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     quickAdd(product);
+    showToast({
+      title: 'Added to Cart! 🛒',
+      message: `1× ${product.name} (${formatCurrency(product.basePrice)}) added.`,
+      type: 'deal',
+      icon: '🍔',
+      actionLabel: 'View Cart',
+    });
   };
 
   return (

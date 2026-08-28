@@ -26,7 +26,7 @@ export const MainLayout: React.FC = () => {
           <Header />
 
           {/* Main Content View with bottom padding for bottom nav */}
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-28">
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-1 pb-24 md:pb-28">
             <Outlet />
           </main>
 

@@ -1,13 +1,22 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
+import { useNotificationStore } from '@/store/useNotificationStore';
 
 export const PromoBanner: React.FC = () => {
   const { applyCoupon, openCartDrawer } = useCartStore();
+  const showToast = useNotificationStore((s) => s.showToast);
 
   const handleClaim = () => {
     applyCoupon('FOODIE50');
     openCartDrawer();
+    showToast({
+      title: 'Coupon FOODIE50 Applied! 🎉',
+      message: '50% discount has been applied to your cart subtotal.',
+      type: 'deal',
+      icon: '🏷️',
+      actionLabel: 'Checkout',
+    });
   };
 
   return (
