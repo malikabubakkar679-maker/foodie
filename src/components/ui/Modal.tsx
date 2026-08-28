@@ -17,7 +17,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
-  maxWidth = 'max-w-lg',
+  maxWidth = 'max-w-xl',
   showCloseButton = true,
 }) => {
   useEffect(() => {
@@ -34,35 +34,35 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 select-none">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-foodie-charcoal/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-foodie-charcoal/65 backdrop-blur-md"
           />
 
-          {/* Modal Card */}
+          {/* Modal Container: Full Screen on Mobile, Centered Card on Desktop */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            initial={{ opacity: 0, y: 40, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.96 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
             className={cn(
-              'relative w-full bg-white rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]',
+              'relative w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] bg-white sm:rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col',
               maxWidth
             )}
           >
             {/* Header */}
             {(title || showCloseButton) && (
-              <div className="flex items-center justify-between px-6 py-4 border-b border-foodie-border shrink-0">
-                {title && <h3 className="text-lg font-extrabold text-foodie-charcoal">{title}</h3>}
+              <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-foodie-border bg-white/95 backdrop-blur-md shrink-0 sticky top-0 z-20">
+                {title && <h3 className="text-lg sm:text-xl font-black text-foodie-charcoal">{title}</h3>}
                 {showCloseButton && (
                   <button
                     onClick={onClose}
-                    className="p-1.5 rounded-full hover:bg-foodie-yellow-soft text-foodie-muted hover:text-foodie-charcoal transition-colors ml-auto"
+                    className="p-2 rounded-full bg-foodie-app hover:bg-foodie-yellow/30 text-foodie-muted hover:text-foodie-charcoal transition-all ml-auto active:scale-90"
                     aria-label="Close"
                   >
                     <X className="w-5 h-5" />
@@ -71,8 +71,10 @@ export const Modal: React.FC<ModalProps> = ({
               </div>
             )}
 
-            {/* Body */}
-            <div className="overflow-y-auto p-6 flex-1">{children}</div>
+            {/* Smooth Scrollable Body */}
+            <div className="overflow-y-auto overscroll-contain scroll-smooth p-5 sm:p-6 flex-1 pb-24 sm:pb-6">
+              {children}
+            </div>
           </motion.div>
         </div>
       )}

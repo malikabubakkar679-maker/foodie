@@ -117,7 +117,7 @@ export const FoodDetailModal: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto select-none">
+      <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden select-none">
         {/* FROSTED GLASS BACKDROP */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -125,16 +125,16 @@ export const FoodDetailModal: React.FC = () => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
           onClick={closeDetailModal}
-          className="fixed inset-0 bg-black/60 backdrop-blur-xl"
+          className="fixed inset-0 bg-black/65 backdrop-blur-xl"
         />
 
-        {/* LARGE IMMERSIVE GLASS MODAL CONTAINER */}
+        {/* FULL SCREEN IMMERSIVE MOBILE / DESKTOP MODAL */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.92, y: 30 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.92, y: 30 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 280 }}
-          className="relative w-full max-w-2xl bg-white/90 backdrop-blur-2xl border border-white/80 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh] my-auto"
+          initial={{ opacity: 0, y: 50, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 50, scale: 0.95 }}
+          transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+          className="relative w-full h-[100dvh] sm:h-auto sm:max-h-[92vh] sm:max-w-2xl bg-white/95 backdrop-blur-2xl border border-white/80 rounded-none sm:rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col my-0 sm:my-auto"
         >
           {/* Ambient Glows */}
           <div className="absolute top-0 right-1/4 w-80 h-80 bg-foodie-yellow/20 rounded-full blur-3xl pointer-events-none" />
