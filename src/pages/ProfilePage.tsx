@@ -588,21 +588,6 @@ export const ProfilePage: React.FC = () => {
             </div>
             <ChevronRight className="w-4 h-4 text-foodie-muted" />
           </div>
-
-          {/* Dedicated Admin Portal Shortcut */}
-          <div
-            onClick={() => navigate('/admin')}
-            className="sm:col-span-2 bg-gradient-to-r from-zinc-900 to-black border border-amber-400/40 rounded-2xl p-4 flex items-center gap-3 cursor-pointer hover:border-amber-400 transition-all shadow-lg text-white"
-          >
-            <div className="w-10 h-10 rounded-xl bg-amber-400 text-foodie-charcoal flex items-center justify-center font-black text-lg shadow-foodie-glow">
-              ⚡
-            </div>
-            <div className="flex-1">
-              <strong className="text-sm font-black text-amber-300 block">Foodie Admin Center</strong>
-              <span className="text-xs text-zinc-400 font-medium">Manage live orders, sync GPS fleet, edit dishes & auto-remove image backgrounds</span>
-            </div>
-            <span className="px-3 py-1 bg-amber-400 text-foodie-charcoal text-[11px] font-black rounded-xl">Open Panel ➔</span>
-          </div>
         </div>
       )}
     </div>

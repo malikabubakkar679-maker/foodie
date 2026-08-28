@@ -126,16 +126,6 @@ export const Header: React.FC = () => {
               )}
             </button>
 
-            {/* Admin Center Shortcut */}
-            <button
-              onClick={() => navigate('/admin')}
-              className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-black text-amber-400 border border-amber-400/30 text-[11px] font-black transition-all shadow-xs flex items-center gap-1 active:scale-95"
-              title="Open Admin Center"
-            >
-              <span>⚡</span>
-              <span className="hidden sm:inline">Admin</span>
-            </button>
-
             {/* User Profile Avatar / Sign In */}
             {isAuthenticated && user ? (
               <button
