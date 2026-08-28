@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Star, Plus } from 'lucide-react';
+import { Heart, Star, Plus, Check, Clock, Flame } from 'lucide-react';
 import { Product } from '@/types/food.types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { useWishlistStore } from '@/store/useWishlistStore';
@@ -18,6 +18,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({ product }) => {
   const openDetailModal = useFoodStore((s) => s.openDetailModal);
   const showToast = useNotificationStore((s) => s.showToast);
   const isFav = isFavorite(product.id);
+  const [isJustAdded, setIsJustAdded] = useState(false);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -42,6 +43,9 @@ export const FoodCard: React.FC<FoodCardProps> = ({ product }) => {
   const handleQuickAddClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     quickAdd(product);
+    setIsJustAdded(true);
+    setTimeout(() => setIsJustAdded(false), 900);
+
     showToast({
       title: 'Added to Cart! 🛒',
       message: `1× ${product.name} (${formatCurrency(product.basePrice)}) added.`,
@@ -57,7 +61,7 @@ export const FoodCard: React.FC<FoodCardProps> = ({ product }) => {
       whileTap={{ scale: 0.98 }}
       transition={{ type: 'spring', damping: 20, stiffness: 300 }}
       onClick={() => openDetailModal(product)}
-      className="group relative bg-white/75 backdrop-blur-xl border border-white/80 hover:border-foodie-yellow/80 rounded-3xl p-3 sm:p-4 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between cursor-pointer overflow-hidden"
+      className="group relative bg-white/80 backdrop-blur-xl border border-white/90 hover:border-foodie-yellow/90 rounded-3xl p-3 sm:p-4 shadow-xs hover:shadow-xl transition-all flex flex-col justify-between cursor-pointer overflow-hidden select-none"
     >
       {/* Top Floating Badges & Favorite Button */}
       <div className="relative w-full h-36 sm:h-44 rounded-2xl overflow-hidden mb-2.5 bg-gradient-to-b from-white/40 to-foodie-yellow-soft/30 flex items-center justify-center">
@@ -66,33 +70,40 @@ export const FoodCard: React.FC<FoodCardProps> = ({ product }) => {
           src={product.imageUrl}
           alt={product.name}
           loading="lazy"
-          className="w-full h-full object-contain p-1.5 group-hover:scale-110 transition-transform duration-400 drop-shadow-md"
+          className="w-full h-full object-contain p-2 group-hover:scale-108 transition-transform duration-300 drop-shadow-md"
         />
 
         {/* Floating Heart Button */}
         <motion.button
-          whileTap={{ scale: 0.8 }}
+          whileTap={{ scale: 0.75 }}
           onClick={handleFavoriteClick}
-          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-sm text-foodie-charcoal hover:text-foodie-red transition-colors z-10"
+          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-xs text-foodie-charcoal hover:text-foodie-red transition-colors z-10"
           aria-label="Favorite"
         >
-          <Heart className={cn('w-4 h-4', isFav && 'fill-foodie-red text-foodie-red')} />
+          <Heart className={cn('w-4 h-4 transition-colors', isFav && 'fill-foodie-red text-foodie-red')} />
         </motion.button>
 
-        {/* Tag Pill */}
-        {product.isVeg && (
-          <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-emerald-50/90 backdrop-blur-md text-foodie-green text-[10px] font-black border border-emerald-200 shadow-2xs">
-            🌱 Veg
-          </span>
-        )}
-        {product.isPopular && !product.isVeg && (
-          <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-foodie-yellow/90 backdrop-blur-md text-foodie-charcoal text-[10px] font-black shadow-2xs">
-            🔥 Popular
-          </span>
-        )}
+        {/* Tag Pills */}
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
+          {product.isVeg && (
+            <span className="px-2 py-0.5 rounded-full bg-emerald-50/95 backdrop-blur-md text-foodie-green text-[10px] font-black border border-emerald-200 shadow-2xs">
+              🌱 Veg
+            </span>
+          )}
+          {product.isPopular && !product.isVeg && (
+            <span className="px-2 py-0.5 rounded-full bg-foodie-yellow/95 backdrop-blur-md text-foodie-charcoal text-[10px] font-black shadow-2xs">
+              🔥 Popular
+            </span>
+          )}
+          {product.isSpicy && (
+            <span className="px-2 py-0.5 rounded-full bg-red-50/95 backdrop-blur-md text-foodie-red text-[10px] font-black border border-red-200 shadow-2xs">
+              🌶️ Spicy
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Clean Info (No Cluttered Description) */}
+      {/* Info */}
       <div className="space-y-1">
         <h4 className="text-xs sm:text-sm font-black text-foodie-charcoal line-clamp-1 group-hover:text-foodie-amber-dark transition-colors">
           {product.name}
@@ -105,6 +116,9 @@ export const FoodCard: React.FC<FoodCardProps> = ({ product }) => {
             <span>{product.rating.toFixed(1)}</span>
           </span>
           <span className="text-foodie-muted text-[11px] font-semibold">• {product.prepTime} mins</span>
+          {product.calories && (
+            <span className="text-foodie-muted text-[11px] font-semibold hidden sm:inline">• {product.calories} cal</span>
+          )}
         </div>
       </div>
 
@@ -114,12 +128,17 @@ export const FoodCard: React.FC<FoodCardProps> = ({ product }) => {
           {formatCurrency(product.basePrice)}
         </span>
         <motion.button
-          whileTap={{ scale: 0.88 }}
+          whileTap={{ scale: 0.85 }}
           onClick={handleQuickAddClick}
-          className="w-8 h-8 rounded-xl bg-foodie-yellow hover:bg-foodie-yellow-dark text-foodie-charcoal flex items-center justify-center font-black shadow-sm transition-colors"
+          className={cn(
+            'w-8 h-8 rounded-xl flex items-center justify-center font-black shadow-xs transition-all',
+            isJustAdded
+              ? 'bg-emerald-500 text-white scale-105'
+              : 'bg-foodie-yellow hover:bg-foodie-yellow-dark text-foodie-charcoal'
+          )}
           aria-label="Add to cart"
         >
-          <Plus className="w-4 h-4" />
+          {isJustAdded ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
         </motion.button>
       </div>
     </motion.div>

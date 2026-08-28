@@ -32,30 +32,36 @@ import {
   ShieldCheck,
   ArrowLeft,
   X,
+  History,
+  CheckCircle,
+  FileText,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useOrderStore } from '@/store/useOrderStore';
 import { useFoodStore } from '@/store/useFoodStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Product, Order, OrderStatus, ProductSizeOption } from '@/types/food.types';
-import { INITIAL_CRUSTS, INITIAL_TOPPINGS } from '@/data/initialData';
+import { INITIAL_CRUSTS, INITIAL_TOPPINGS, INITIAL_ORDERS } from '@/data/initialData';
 import { formatCurrency, cn } from '@/lib/utils';
 import { removeImageBackground } from '@/lib/imageBgRemover';
 import confetti from 'canvas-confetti';
 
-type AdminTab = 'orders' | 'catalog' | 'add_item' | 'analytics';
+type AdminTab = 'orders' | 'previous_orders' | 'catalog' | 'add_item' | 'analytics';
 
 export const AdminPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { orders, fetchAllOrdersAdmin, updateOrderStatus, assignDriver, deleteOrder } = useOrderStore();
+  const { orders, fetchAllOrdersAdmin, updateOrderStatus, assignDriver, deleteOrder, isRealtimeConnected } = useOrderStore();
   const { categories, products, addProduct, updateProduct, deleteProduct, fetchData } = useFoodStore();
   const { showToast } = useNotificationStore();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('orders');
   const [orderFilter, setOrderFilter] = useState<string>('all');
+  const [orderSearchQuery, setOrderSearchQuery] = useState<string>('');
   const [catalogCategory, setCatalogCategory] = useState<string>('all');
   const [catalogSearch, setCatalogSearch] = useState<string>('');
+  const [inspectingOrder, setInspectingOrder] = useState<Order | null>(null);
 
   // Add Item Form State
   const [formCategory, setFormCategory] = useState<string>('c_pizza');
@@ -69,30 +75,29 @@ export const AdminPage: React.FC = () => {
   const [formIsSpicy, setFormIsSpicy] = useState<boolean>(false);
   const [formIsPopular, setFormIsPopular] = useState<boolean>(true);
 
-  // Category-Specific Dynamic Attributes
-  // Pizza
+  // Dynamic Modifiers
   const [pizzaSmallPrice, setPizzaSmallPrice] = useState<number>(0);
   const [pizzaMediumPrice, setPizzaMediumPrice] = useState<number>(4.5);
   const [pizzaLargePrice, setPizzaLargePrice] = useState<number>(8.0);
-  // Drink
   const [drinkUnit, setDrinkUnit] = useState<'ml' | 'L'>('ml');
   const [drinkVolumeValue, setDrinkVolumeValue] = useState<string>('500ml');
-  // Burger
   const [burgerPattyCount, setBurgerPattyCount] = useState<string>('Double Patty (280g)');
-  // Dessert
   const [dessertPortion, setDessertPortion] = useState<string>('Single Slice (180g)');
 
-  // Studio Image Uploader & Auto BG Remover State
+  // Studio Image Uploader & Edge-Aware Auto BG Remover State
   const [rawImageInput, setRawImageInput] = useState<string>('');
   const [processedImageUrl, setProcessedImageUrl] = useState<string>('/assets/hero-pizza.png');
   const [isRemovingBg, setIsRemovingBg] = useState<boolean>(false);
+  const [bgTolerance, setBgTolerance] = useState<number>(34);
+  const [bgFeather, setBgFeather] = useState<number>(3);
+  const [bgEdgeThreshold, setBgEdgeThreshold] = useState<number>(28);
 
   useEffect(() => {
     fetchAllOrdersAdmin();
     fetchData();
   }, [fetchAllOrdersAdmin, fetchData]);
 
-  // Handle Image File Upload with Auto BG Removal
+  // Handle Image File Upload with Edge-Aware BG Removal
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -104,11 +109,15 @@ export const AdminPage: React.FC = () => {
       setIsRemovingBg(true);
 
       try {
-        const transparentImg = await removeImageBackground(result, { tolerance: 35, feather: 2 });
+        const transparentImg = await removeImageBackground(result, {
+          tolerance: bgTolerance,
+          feather: bgFeather,
+          edgeThreshold: bgEdgeThreshold,
+        });
         setProcessedImageUrl(transparentImg);
         showToast({
           title: 'Background Removed! ✨',
-          message: 'AI extracted studio-grade transparent food asset.',
+          message: 'Edge-aware AI protected food edges & generated studio cutout.',
           type: 'deal',
           icon: '🪄',
         });
@@ -121,24 +130,28 @@ export const AdminPage: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  // Trigger manual background removal on pasted URL / image
+  // Trigger manual background removal on pasted URL / image with customized sliders
   const handleManualBgRemoval = async () => {
     if (!rawImageInput && !processedImageUrl) return;
     setIsRemovingBg(true);
     try {
       const src = rawImageInput || processedImageUrl;
-      const transparentImg = await removeImageBackground(src, { tolerance: 38, feather: 2 });
+      const transparentImg = await removeImageBackground(src, {
+        tolerance: bgTolerance,
+        feather: bgFeather,
+        edgeThreshold: bgEdgeThreshold,
+      });
       setProcessedImageUrl(transparentImg);
       showToast({
         title: 'Background Cleaned! 🪄',
-        message: 'Transparent PNG generated successfully.',
+        message: 'Transparent PNG generated with zero food clipping.',
         type: 'deal',
         icon: '✨',
       });
     } catch {
       showToast({
         title: 'Notice',
-        message: 'Could not remove background on cross-origin URL. Using direct image.',
+        message: 'Could not process cross-origin URL directly. You can upload an image file instead.',
         type: 'welcome',
         icon: '⚠️',
       });
@@ -210,7 +223,6 @@ export const AdminPage: React.FC = () => {
       icon: '🎉',
     });
 
-    // Reset Form
     setFormName('');
     setFormDescription('');
     setActiveTab('catalog');
@@ -218,12 +230,30 @@ export const AdminPage: React.FC = () => {
 
   // Metrics Calculations
   const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
-  const activeOrdersCount = orders.filter((o) => o.status !== 'Delivered').length;
-  const deliveredOrdersCount = orders.filter((o) => o.status === 'Delivered').length;
+  const activeOrders = orders.filter((o) => o.status !== 'Delivered');
+  const pastOrders = orders.filter((o) => o.status === 'Delivered');
+  const activeOrdersCount = activeOrders.length;
+  const pastOrdersCount = pastOrders.length;
 
-  const filteredOrders = orders.filter((o) => {
-    if (orderFilter === 'all') return true;
-    return o.status.toLowerCase().replace(/\s+/g, '_') === orderFilter;
+  // Filter Orders
+  const currentOrdersList = activeTab === 'previous_orders' ? pastOrders : orders;
+  const filteredOrders = currentOrdersList.filter((o) => {
+    if (activeTab === 'orders') {
+      if (orderFilter === 'active') return o.status !== 'Delivered';
+      if (orderFilter === 'previous') return o.status === 'Delivered';
+      if (orderFilter !== 'all') {
+        return o.status.toLowerCase().replace(/\s+/g, '_') === orderFilter;
+      }
+    }
+    if (orderSearchQuery.trim()) {
+      const q = orderSearchQuery.toLowerCase();
+      const matchNum = o.orderNumber.toLowerCase().includes(q);
+      const matchAddr = (o.deliveryAddress || '').toLowerCase().includes(q);
+      const matchItems = o.items.some((i) => i.productName.toLowerCase().includes(q));
+      const matchDriver = (o.driverName || '').toLowerCase().includes(q);
+      return matchNum || matchAddr || matchItems || matchDriver;
+    }
+    return true;
   });
 
   const filteredCatalog = products.filter((p) => {
@@ -238,11 +268,11 @@ export const AdminPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white pb-20 select-none">
       {/* 1. TOP LUXURY ADMIN APP BAR */}
-      <header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-2xl border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-2xl">
+      <header className="sticky top-0 z-40 bg-zinc-950/85 backdrop-blur-2xl border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-2xl">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-zinc-200 transition-all border border-white/10"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-zinc-200 transition-all border border-white/10 active:scale-95"
             title="Return to Customer Storefront"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -257,11 +287,11 @@ export const AdminPage: React.FC = () => {
               <h1 className="text-sm sm:text-base font-black tracking-tight flex items-center gap-1.5">
                 <span>Foodie Admin Center</span>
                 <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[10px] text-amber-300 font-extrabold uppercase tracking-wider">
-                  Live Sync
+                  Live Realtime Sync
                 </span>
               </h1>
               <p className="text-[11px] text-zinc-400 font-medium hidden sm:block">
-                Real-time Order Telemetry & Multi-Category Catalog Suite
+                Live Customer Orders, Historical Archives & Studio Menu Suite
               </p>
             </div>
           </div>
@@ -273,17 +303,18 @@ export const AdminPage: React.FC = () => {
             onClick={() => {
               fetchAllOrdersAdmin();
               fetchData();
-              showToast({ title: 'Synced!', message: 'Live orders & catalog reloaded.', type: 'welcome', icon: '🔄' });
+              showToast({ title: 'Synced!', message: 'Live database refreshed.', type: 'welcome', icon: '🔄' });
             }}
             className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-300 transition-all border border-white/10 active:scale-95"
-            title="Refresh Live DB"
+            title="Force Refresh Data"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
 
           <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Connected</span>
+            <span className="hidden sm:inline">Realtime Connected</span>
+            <span className="sm:hidden">Live</span>
           </div>
         </div>
       </header>
@@ -318,28 +349,28 @@ export const AdminPage: React.FC = () => {
           <div className="p-4 rounded-2xl bg-zinc-900/90 border border-white/10 backdrop-blur-xl shadow-lg flex items-center justify-between">
             <div>
               <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">
-                Revenue
+                Previous Orders
               </span>
               <strong className="text-xl sm:text-2xl font-black text-emerald-300">
-                {formatCurrency(totalRevenue)}
+                {pastOrdersCount}
               </strong>
             </div>
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <DollarSign className="w-5 h-5" />
+              <History className="w-5 h-5" />
             </div>
           </div>
 
           <div className="p-4 rounded-2xl bg-zinc-900/90 border border-white/10 backdrop-blur-xl shadow-lg flex items-center justify-between">
             <div>
               <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wider block">
-                Menu Items
+                Revenue
               </span>
               <strong className="text-xl sm:text-2xl font-black text-purple-300">
-                {products.length}
+                {formatCurrency(totalRevenue)}
               </strong>
             </div>
             <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-              <Layers className="w-5 h-5" />
+              <DollarSign className="w-5 h-5" />
             </div>
           </div>
         </div>
@@ -358,7 +389,20 @@ export const AdminPage: React.FC = () => {
             )}
           >
             <Bike className="w-4 h-4" />
-            <span>1. Live Orders & Fleet GPS ({activeOrdersCount})</span>
+            <span>1. Live Orders & Fleet ({activeOrdersCount})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('previous_orders')}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0',
+              activeTab === 'previous_orders'
+                ? 'bg-foodie-yellow text-foodie-charcoal shadow-foodie-glow'
+                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+            )}
+          >
+            <History className="w-4 h-4" />
+            <span>2. Previous Orders History ({pastOrdersCount})</span>
           </button>
 
           <button
@@ -371,7 +415,7 @@ export const AdminPage: React.FC = () => {
             )}
           >
             <Store className="w-4 h-4" />
-            <span>2. Menu Catalog Manager ({products.length})</span>
+            <span>3. Menu Catalog ({products.length})</span>
           </button>
 
           <button
@@ -384,7 +428,7 @@ export const AdminPage: React.FC = () => {
             )}
           >
             <PlusCircle className="w-4 h-4" />
-            <span>3. Add Dish + Studio BG Remover</span>
+            <span>4. Add Dish + Studio BG Remover</span>
           </button>
 
           <button
@@ -397,7 +441,7 @@ export const AdminPage: React.FC = () => {
             )}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>4. Analytics & Sales</span>
+            <span>5. Analytics & Sales</span>
           </button>
         </div>
       </div>
@@ -406,61 +450,88 @@ export const AdminPage: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-8 pt-6">
         
         {/* =========================================================================
-            TAB 1: LIVE ORDERS & FLEET GPS SYNC
+            TAB 1 & 2: LIVE ORDERS & PREVIOUS ORDERS HISTORY
            ========================================================================= */}
-        {activeTab === 'orders' && (
+        {(activeTab === 'orders' || activeTab === 'previous_orders') && (
           <div className="space-y-6">
-            {/* Filter pills */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                {[
-                  { id: 'all', label: 'All Orders' },
-                  { id: 'confirmed', label: 'Confirmed 📦' },
-                  { id: 'preparing', label: 'In Oven 🔥' },
-                  { id: 'out_for_delivery', label: 'On Road 🛵' },
-                  { id: 'delivered', label: 'Delivered ✅' },
-                ].map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => setOrderFilter(f.id)}
-                    className={cn(
-                      'px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all shrink-0',
-                      orderFilter === f.id
-                        ? 'bg-amber-400/20 border-amber-400 text-amber-300'
-                        : 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-white'
-                    )}
-                  >
-                    {f.label}
-                  </button>
-                ))}
+            {/* Search & Filter Bar */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 justify-between">
+              <div className="relative w-full sm:w-80">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <input
+                  type="text"
+                  value={orderSearchQuery}
+                  onChange={(e) => setOrderSearchQuery(e.target.value)}
+                  placeholder="Search order #, dish, address..."
+                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-zinc-900 border border-white/10 text-xs font-bold text-white placeholder:text-zinc-500 focus:outline-none focus:border-amber-400"
+                />
               </div>
 
-              <span className="text-xs text-zinc-400 font-bold">
-                Showing {filteredOrders.length} orders
-              </span>
+              {activeTab === 'orders' && (
+                <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1">
+                  {[
+                    { id: 'all', label: `All (${orders.length})` },
+                    { id: 'active', label: `Active (${activeOrdersCount}) 🔥` },
+                    { id: 'confirmed', label: 'Confirmed 📦' },
+                    { id: 'preparing', label: 'In Oven 🔥' },
+                    { id: 'out_for_delivery', label: 'On Road 🛵' },
+                    { id: 'delivered', label: 'Delivered ✅' },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setOrderFilter(f.id)}
+                      className={cn(
+                        'px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all shrink-0',
+                        orderFilter === f.id
+                          ? 'bg-amber-400/20 border-amber-400 text-amber-300'
+                          : 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-white'
+                      )}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === 'previous_orders' && (
+                <div className="flex items-center gap-2 text-xs font-bold text-zinc-400">
+                  <span>📜 Historical Completed Orders Archive ({pastOrders.length})</span>
+                </div>
+              )}
             </div>
 
             {/* Orders Grid / Cards */}
             {filteredOrders.length === 0 ? (
               <div className="p-12 text-center rounded-3xl bg-zinc-900/60 border border-white/10 space-y-3">
                 <div className="w-14 h-14 rounded-2xl bg-white/5 mx-auto flex items-center justify-center text-2xl">
-                  📦
+                  {activeTab === 'previous_orders' ? '📜' : '📦'}
                 </div>
-                <h3 className="text-base font-black text-white">No orders matching this filter</h3>
+                <h3 className="text-base font-black text-white">
+                  {activeTab === 'previous_orders' ? 'No previous orders found' : 'No orders matching this filter'}
+                </h3>
                 <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                  When customers place orders on the app, they will appear here live with interactive GPS sync controls!
+                  {activeTab === 'previous_orders'
+                    ? 'Orders that are completed or delivered will appear here in the historical archive.'
+                    : 'When customers place orders, they appear here live with real-time GPS sync!'}
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredOrders.map((order) => {
-                  const step = order.step ?? (order.status === 'Delivered' ? 3 : order.status === 'Out for Delivery' ? 2 : order.status === 'Preparing' ? 1 : 0);
+                  const step =
+                    order.step ??
+                    (order.status === 'Delivered' ? 3 : order.status === 'Out for Delivery' ? 2 : order.status === 'Preparing' ? 1 : 0);
 
                   return (
                     <motion.div
                       key={order.id}
                       layout
-                      className="p-5 rounded-3xl bg-zinc-900/90 border border-white/10 backdrop-blur-xl shadow-xl space-y-4 hover:border-amber-400/40 transition-all"
+                      className={cn(
+                        'p-5 rounded-3xl bg-zinc-900/90 border backdrop-blur-xl shadow-xl space-y-4 transition-all',
+                        order.status === 'Delivered'
+                          ? 'border-emerald-500/20 hover:border-emerald-500/40'
+                          : 'border-white/10 hover:border-amber-400/40'
+                      )}
                     >
                       {/* Card Header */}
                       <div className="flex items-center justify-between border-b border-white/10 pb-3">
@@ -541,7 +612,7 @@ export const AdminPage: React.FC = () => {
                       {/* REAL-TIME LIVE GPS STEP ADVANCER */}
                       <div className="space-y-2 pt-1">
                         <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">
-                          ⚡ Real Sync Live GPS Status
+                          ⚡ Realtime Sync GPS Status (User Updates Live)
                         </span>
                         
                         <div className="grid grid-cols-4 gap-1.5">
@@ -568,8 +639,16 @@ export const AdminPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Delete action */}
-                      <div className="flex justify-end pt-1">
+                      {/* Actions */}
+                      <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                        <button
+                          onClick={() => setInspectingOrder(order)}
+                          className="flex items-center gap-1 text-[11px] text-zinc-400 hover:text-white font-bold"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View Full Receipt</span>
+                        </button>
+
                         <button
                           onClick={() => {
                             if (confirm(`Delete order #${order.orderNumber}?`)) {
@@ -580,7 +659,7 @@ export const AdminPage: React.FC = () => {
                           className="flex items-center gap-1 text-[11px] text-red-400 hover:text-red-300 font-bold"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          <span>Delete Order</span>
+                          <span>Delete</span>
                         </button>
                       </div>
                     </motion.div>
@@ -592,7 +671,7 @@ export const AdminPage: React.FC = () => {
         )}
 
         {/* =========================================================================
-            TAB 2: MENU CATALOG MANAGER
+            TAB 3: MENU CATALOG MANAGER
            ========================================================================= */}
         {activeTab === 'catalog' && (
           <div className="space-y-6">
@@ -718,7 +797,7 @@ export const AdminPage: React.FC = () => {
         )}
 
         {/* =========================================================================
-            TAB 3: ADD NEW DISH + AUTO BG REMOVAL
+            TAB 4: ADD NEW DISH + EDGE-AWARE STUDIO BG REMOVAL
            ========================================================================= */}
         {activeTab === 'add_item' && (
           <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-zinc-900/90 border border-white/10 backdrop-blur-2xl shadow-2xl space-y-6">
@@ -726,11 +805,11 @@ export const AdminPage: React.FC = () => {
               <h2 className="text-xl font-black text-white flex items-center gap-2">
                 <span>Add New Food Item to Menu</span>
                 <span className="px-2.5 py-0.5 rounded-full bg-foodie-yellow text-foodie-charcoal text-[11px] font-black uppercase">
-                  Studio AI
+                  Studio AI Edge-Protected
                 </span>
               </h2>
               <p className="text-xs text-zinc-400 font-medium mt-1">
-                Upload any food image—our AI automatically removes backgrounds to produce pristine transparent studio cutouts!
+                Upload any food photo—our edge-aware flood fill keeps cheese, crust, and sauces 100% intact while cleanly removing outer backgrounds!
               </p>
             </div>
 
@@ -774,11 +853,11 @@ export const AdminPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4" />
-                    <span>Auto Background Removal Tool</span>
+                    <span>Edge-Aware Background Removal Engine</span>
                   </label>
                   {isRemovingBg && (
                     <span className="text-xs text-amber-300 font-bold animate-pulse">
-                      Processing alpha transparency...
+                      Analyzing contours & removing background...
                     </span>
                   )}
                 </div>
@@ -792,7 +871,7 @@ export const AdminPage: React.FC = () => {
                         Click to upload food photo
                       </span>
                       <span className="text-[10px] text-zinc-400 text-center mt-0.5">
-                        JPG, PNG, WebP (Auto-removes background)
+                        JPG, PNG, WebP (Edge-protected flood fill)
                       </span>
                       <input
                         type="file"
@@ -822,6 +901,35 @@ export const AdminPage: React.FC = () => {
                         Clean BG 🪄
                       </button>
                     </div>
+
+                    {/* Fine-Tuning Sliders */}
+                    <div className="p-3 rounded-xl bg-zinc-900/90 border border-white/10 space-y-2 text-[11px]">
+                      <div className="flex items-center justify-between text-zinc-300 font-bold">
+                        <span>Tolerance Sensitivity</span>
+                        <span className="text-amber-400 font-black">{bgTolerance}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="15"
+                        max="60"
+                        value={bgTolerance}
+                        onChange={(e) => setBgTolerance(Number(e.target.value))}
+                        className="w-full accent-amber-400 cursor-pointer h-1.5 bg-zinc-700 rounded-lg"
+                      />
+
+                      <div className="flex items-center justify-between text-zinc-300 font-bold pt-1">
+                        <span>Edge Barrier Protection</span>
+                        <span className="text-amber-400 font-black">{bgEdgeThreshold}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="15"
+                        max="50"
+                        value={bgEdgeThreshold}
+                        onChange={(e) => setBgEdgeThreshold(Number(e.target.value))}
+                        className="w-full accent-amber-400 cursor-pointer h-1.5 bg-zinc-700 rounded-lg"
+                      />
+                    </div>
                   </div>
 
                   {/* Live Studio Checkered Transparent Preview */}
@@ -842,7 +950,7 @@ export const AdminPage: React.FC = () => {
                     </div>
                     <span className="text-[10px] text-emerald-400 font-extrabold mt-2 flex items-center gap-1">
                       <Check className="w-3 h-3" />
-                      <span>Transparent Studio Asset Ready</span>
+                      <span>Protected Transparent Studio Asset Ready</span>
                     </span>
                   </div>
                 </div>
@@ -886,7 +994,7 @@ export const AdminPage: React.FC = () => {
                 />
               </div>
 
-              {/* DYNAMIC CATEGORY-SPECIFIC ATTRIBUTES */}
+              {/* Category Attributes */}
               {formCategory === 'c_pizza' && (
                 <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-3">
                   <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider">
@@ -927,72 +1035,7 @@ export const AdminPage: React.FC = () => {
                 </div>
               )}
 
-              {formCategory === 'c_drinks' && (
-                <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 space-y-3">
-                  <h4 className="text-xs font-black text-blue-300 uppercase tracking-wider">
-                    🥤 Drink Volume Units & Portions
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <label className="text-[10px] text-zinc-400 font-bold block mb-1">Volume Unit</label>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setDrinkUnit('ml')}
-                          className={cn(
-                            'flex-1 py-1.5 rounded-lg font-bold border transition-all',
-                            drinkUnit === 'ml' ? 'bg-blue-500 text-white border-blue-400' : 'bg-zinc-900 border-white/10 text-zinc-400'
-                          )}
-                        >
-                          Milliliters (ml)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDrinkUnit('L')}
-                          className={cn(
-                            'flex-1 py-1.5 rounded-lg font-bold border transition-all',
-                            drinkUnit === 'L' ? 'bg-blue-500 text-white border-blue-400' : 'bg-zinc-900 border-white/10 text-zinc-400'
-                          )}
-                        >
-                          Liters (L)
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] text-zinc-400 font-bold block mb-1">Default Volume</label>
-                      <select
-                        value={drinkVolumeValue}
-                        onChange={(e) => setDrinkVolumeValue(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-white/10 text-white font-bold text-xs"
-                      >
-                        <option value="250ml">250 ml (Can)</option>
-                        <option value="330ml">330 ml (Glass Bottle)</option>
-                        <option value="500ml">500 ml (Standard)</option>
-                        <option value="1L">1.0 Liter (Carafe)</option>
-                        <option value="1.5L">1.5 Liter (Family Bottle)</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {formCategory === 'c_burgers' && (
-                <div className="p-4 rounded-2xl bg-orange-500/10 border border-orange-500/20 space-y-2">
-                  <h4 className="text-xs font-black text-orange-300 uppercase tracking-wider">
-                    🍔 Burger Patty Modifier
-                  </h4>
-                  <input
-                    type="text"
-                    value={burgerPattyCount}
-                    onChange={(e) => setBurgerPattyCount(e.target.value)}
-                    placeholder="e.g. Double Smash Angus (280g)"
-                    className="w-full px-3.5 py-2 rounded-lg bg-zinc-900 border border-white/10 text-xs font-bold text-white"
-                  />
-                </div>
-              )}
-
-              {/* Flags (Veg, Spicy, Popular) */}
+              {/* Flags */}
               <div className="flex items-center gap-6 pt-2">
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-zinc-300">
                   <input
@@ -1038,7 +1081,7 @@ export const AdminPage: React.FC = () => {
         )}
 
         {/* =========================================================================
-            TAB 4: ANALYTICS & FINANCIALS
+            TAB 5: ANALYTICS & FINANCIALS
            ========================================================================= */}
         {activeTab === 'analytics' && (
           <div className="space-y-6">
@@ -1051,7 +1094,7 @@ export const AdminPage: React.FC = () => {
                   {formatCurrency(totalRevenue)}
                 </strong>
                 <span className="text-[11px] text-zinc-400 block font-medium">
-                  Across {orders.length} processed customer orders
+                  Across {orders.length} total orders
                 </span>
               </div>
 
@@ -1063,7 +1106,7 @@ export const AdminPage: React.FC = () => {
                   {formatCurrency(orders.length > 0 ? totalRevenue / orders.length : 0)}
                 </strong>
                 <span className="text-[11px] text-zinc-400 block font-medium">
-                  Including gourmet toppings and couriers
+                  Including toppings & delivery fees
                 </span>
               </div>
 
@@ -1075,13 +1118,88 @@ export const AdminPage: React.FC = () => {
                   99.4%
                 </strong>
                 <span className="text-[11px] text-zinc-400 block font-medium">
-                  Average dispatch to doorstep: 24 mins
+                  Average dispatch to doorstep: 22 mins
                 </span>
               </div>
             </div>
           </div>
         )}
       </main>
+
+      {/* INSPECT ORDER FULL RECEIPT MODAL */}
+      <AnimatePresence>
+        {inspectingOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-lg rounded-3xl bg-zinc-900 border border-white/20 p-6 space-y-4 shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div>
+                  <h3 className="text-base font-black text-white">
+                    Order #{inspectingOrder.orderNumber} Receipt
+                  </h3>
+                  <span className="text-xs text-zinc-400">{inspectingOrder.createdAt}</span>
+                </div>
+                <button
+                  onClick={() => setInspectingOrder(null)}
+                  className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-zinc-300"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {inspectingOrder.items.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs p-2 rounded-xl bg-black/40">
+                    <div>
+                      <span className="font-black text-amber-300">{item.quantity}× </span>
+                      <span className="text-white font-bold">{item.productName} </span>
+                      <span className="text-zinc-400">({item.size})</span>
+                    </div>
+                    <strong className="text-white">{formatCurrency(item.totalPrice)}</strong>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2 border-t border-white/10 space-y-1 text-xs text-zinc-300">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>{formatCurrency(inspectingOrder.subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Delivery Fee:</span>
+                  <span>{formatCurrency(inspectingOrder.deliveryFee)}</span>
+                </div>
+                <div className="flex justify-between font-black text-sm text-amber-300 pt-1 border-t border-white/10">
+                  <span>Total Paid:</span>
+                  <span>{formatCurrency(inspectingOrder.total)}</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-white/5 text-xs text-zinc-300 space-y-1">
+                <div className="flex items-center gap-1 text-[11px] text-zinc-400">
+                  <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{inspectingOrder.deliveryAddress}</span>
+                </div>
+                <div className="flex items-center gap-1 text-[11px] text-zinc-400">
+                  <Bike className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Courier: {inspectingOrder.driverName || 'Alex'} ({inspectingOrder.driverPhone || '+1 555-456-7890'})</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setInspectingOrder(null)}
+                className="w-full py-3 rounded-xl bg-amber-400 text-foodie-charcoal font-black text-xs"
+              >
+                Close Receipt
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
