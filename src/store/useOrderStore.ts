@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Order, Address } from '@/types/food.types';
+import { Order, Address, OrderStatus } from '@/types/food.types';
 import { orderService } from '@/services/orderService';
 import { useCartStore } from './useCartStore';
 import { useNotificationStore } from './useNotificationStore';
@@ -17,6 +17,10 @@ interface OrderState {
   paymentMethod: 'card' | 'applepay' | 'wallet' | 'cod';
   isLoading: boolean;
   fetchOrders: (userId?: string) => Promise<void>;
+  fetchAllOrdersAdmin: () => Promise<Order[]>;
+  updateOrderStatus: (orderId: string, status: OrderStatus, step: number, courierProgress?: number) => void;
+  assignDriver: (orderId: string, driverName: string, driverPhone: string) => void;
+  deleteOrder: (orderId: string) => void;
   setSelectedAddressId: (id: string) => void;
   setDeliveryTiming: (timing: 'asap' | 'scheduled') => void;
   setPaymentMethod: (method: 'card' | 'applepay' | 'wallet' | 'cod') => void;
@@ -39,6 +43,16 @@ const DEFAULT_ADDRESS: Address = {
   isDefault: true,
 };
 
+const ORDERS_DB_KEY = 'foodie_user_orders_db';
+
+const persistAllOrders = (orders: Order[]) => {
+  try {
+    localStorage.setItem(ORDERS_DB_KEY, JSON.stringify(orders));
+  } catch (e) {
+    console.warn('Persist orders error:', e);
+  }
+};
+
 export const useOrderStore = create<OrderState>((set, get) => ({
   orders: [], // 0 orders by default for fresh accounts
   addresses: [DEFAULT_ADDRESS],
@@ -59,6 +73,73 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     } catch {
       set({ orders: [] });
     }
+  },
+
+  fetchAllOrdersAdmin: async () => {
+    try {
+      const orders = await orderService.getOrders();
+      set({ orders });
+      return orders;
+    } catch {
+      return [];
+    }
+  },
+
+  updateOrderStatus: (orderId: string, status: OrderStatus, step: number, courierProgress?: number) => {
+    const { orders, activeTrackingOrder } = get();
+    const updated = orders.map((o) => {
+      if (o.id === orderId) {
+        return {
+          ...o,
+          status,
+          step,
+          courierProgress: courierProgress !== undefined ? courierProgress : (step === 2 ? 0.65 : step === 3 ? 1.0 : 0.2),
+        };
+      }
+      return o;
+    });
+
+    const active =
+      activeTrackingOrder?.id === orderId
+        ? updated.find((x) => x.id === orderId) || null
+        : activeTrackingOrder;
+
+    set({ orders: updated, activeTrackingOrder: active });
+    persistAllOrders(updated);
+
+    // Broadcast toast notification
+    const order = updated.find((o) => o.id === orderId);
+    if (order) {
+      const statusTitle =
+        status === 'Preparing'
+          ? `Order #${order.orderNumber} in Oven! 🔥`
+          : status === 'Out for Delivery'
+          ? `Courier Out for Delivery! 🛵`
+          : status === 'Delivered'
+          ? `Order #${order.orderNumber} Delivered! 🍕`
+          : `Order #${order.orderNumber} Confirmed! 🎉`;
+
+      useNotificationStore.getState().showToast({
+        title: statusTitle,
+        message: `Order status updated to "${status}". Live GPS updated.`,
+        type: 'order_confirmed',
+        icon: status === 'Out for Delivery' ? '🛵' : '📦',
+      });
+    }
+  },
+
+  assignDriver: (orderId: string, driverName: string, driverPhone: string) => {
+    const updated = get().orders.map((o) =>
+      o.id === orderId ? { ...o, driverName, driverPhone } : o
+    );
+    set({ orders: updated });
+    persistAllOrders(updated);
+  },
+
+  deleteOrder: (orderId: string) => {
+    const updated = get().orders.filter((o) => o.id !== orderId);
+    set({ orders: updated });
+    persistAllOrders(updated);
   },
 
   setSelectedAddressId: (id) => set({ selectedAddressId: id }),
@@ -103,81 +184,30 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       isLoading: false,
     }));
 
-    // Trigger Top-to-Bottom Animated Notification Toast
-    useNotificationStore.getState().addNotification({
-      type: 'order_confirmed',
+    // Trigger user action toast
+    useNotificationStore.getState().showToast({
       title: `Order #${newOrder.orderNumber} Confirmed! 🎉`,
-      message: 'Chefs are crafting your hot stone-baked meal right now.',
+      message: 'Your order has been sent to the kitchen. Track live GPS anytime.',
+      type: 'order_confirmed',
       icon: '📦',
-      actionLabel: 'Track Live GPS',
+      actionLabel: 'Track GPS',
     });
 
-    get().simulateStatusAdvancement(newOrder.id);
     return newOrder;
   },
 
   simulateStatusAdvancement: (orderId) => {
+    // Optional client demo advancement if triggered
     setTimeout(() => {
-      set((state) => {
-        const updated = state.orders.map((o) =>
-          o.id === orderId ? { ...o, status: 'Preparing' as const, step: 1 } : o
-        );
-        const active =
-          state.activeTrackingOrder?.id === orderId
-            ? updated.find((x) => x.id === orderId)
-            : state.activeTrackingOrder;
-        return { orders: updated, activeTrackingOrder: active || null };
-      });
-
-      useNotificationStore.getState().addNotification({
-        type: 'order_confirmed',
-        title: `Order Baking in Oven! 🔥`,
-        message: 'Your meal is in the stone-baked oven with bubbling mozzarella.',
-        icon: '👨‍🍳',
-        actionLabel: 'View Order',
-      });
+      get().updateOrderStatus(orderId, 'Preparing', 1, 0.25);
     }, 6000);
 
     setTimeout(() => {
-      set((state) => {
-        const updated = state.orders.map((o) =>
-          o.id === orderId ? { ...o, status: 'Out for Delivery' as const, step: 2 } : o
-        );
-        const active =
-          state.activeTrackingOrder?.id === orderId
-            ? updated.find((x) => x.id === orderId)
-            : state.activeTrackingOrder;
-        return { orders: updated, activeTrackingOrder: active || null };
-      });
-
-      useNotificationStore.getState().addNotification({
-        type: 'out_for_delivery',
-        title: `Courier Alex Out for Delivery! 🛵`,
-        message: 'Food is packed in heated thermal bag. ETA: 12 mins.',
-        icon: '🛵',
-        actionLabel: 'Live GPS Map',
-      });
+      get().updateOrderStatus(orderId, 'Out for Delivery', 2, 0.6);
     }, 14000);
 
     setTimeout(() => {
-      set((state) => {
-        const updated = state.orders.map((o) =>
-          o.id === orderId ? { ...o, status: 'Delivered' as const, step: 3 } : o
-        );
-        const active =
-          state.activeTrackingOrder?.id === orderId
-            ? updated.find((x) => x.id === orderId)
-            : state.activeTrackingOrder;
-        return { orders: updated, activeTrackingOrder: active || null };
-      });
-
-      useNotificationStore.getState().addNotification({
-        type: 'order_delivered',
-        title: `Order Delivered! 🍕`,
-        message: 'Your food has arrived at your door. Enjoy your delicious feast!',
-        icon: '✅',
-        actionLabel: 'Rate Order',
-      });
+      get().updateOrderStatus(orderId, 'Delivered', 3, 1.0);
     }, 24000);
   },
 }));

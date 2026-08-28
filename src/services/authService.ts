@@ -19,24 +19,27 @@ const DEFAULT_AVATARS = [
 const getStoredUsers = (): StoredAccount[] => {
   try {
     const raw = localStorage.getItem(USERS_DB_KEY);
-    if (!raw) {
-      // Seed fresh initial demo account with zero balance
-      const initialUsers: StoredAccount[] = [
-        {
-          id: 'u_demo',
-          fullName: 'Alex Johnson',
-          email: 'alex@foodie.com',
-          phone: '+1 (555) 234-5678',
-          password: 'password123',
-          avatarUrl: DEFAULT_AVATARS[0],
-          walletBalance: 0.0,
-          createdAt: Date.now(),
-        },
-      ];
-      localStorage.setItem(USERS_DB_KEY, JSON.stringify(initialUsers));
-      return initialUsers;
+    let users: StoredAccount[] = raw ? JSON.parse(raw) : [];
+
+    // Ensure Default Admin Account always exists
+    const hasAdmin = users.some((u) => u.email.toLowerCase() === 'admin@foodie.com');
+    if (!hasAdmin) {
+      const adminAccount: StoredAccount = {
+        id: 'u_admin',
+        fullName: 'Master Foodie Admin',
+        email: 'admin@foodie.com',
+        phone: '+1 (555) 000-7777',
+        password: 'admin123',
+        avatarUrl: DEFAULT_AVATARS[0],
+        walletBalance: 500.0,
+        role: 'admin',
+        createdAt: Date.now(),
+      };
+      users.push(adminAccount);
+      localStorage.setItem(USERS_DB_KEY, JSON.stringify(users));
     }
-    return JSON.parse(raw);
+
+    return users;
   } catch {
     return [];
   }
@@ -69,6 +72,7 @@ export const authService = {
               phone: p.phone || '',
               avatarUrl: p.avatar_url || DEFAULT_AVATARS[0],
               walletBalance: Number(p.wallet_balance) || 0.0,
+              role: p.email === 'admin@foodie.com' ? 'admin' : (p.role || 'user'),
             };
           }
         }
@@ -106,6 +110,7 @@ export const authService = {
             phone: data.user.user_metadata?.phone || '+1 (555) 000-0000',
             avatarUrl: DEFAULT_AVATARS[0],
             walletBalance: 0.0,
+            role: cleanEmail === 'admin@foodie.com' ? 'admin' : 'user',
           };
           localStorage.setItem(SESSION_KEY, JSON.stringify(profile));
           return profile;
@@ -131,38 +136,25 @@ export const authService = {
         phone: existingUser.phone,
         avatarUrl: existingUser.avatarUrl || DEFAULT_AVATARS[0],
         walletBalance: existingUser.walletBalance ?? 0.0,
+        role: existingUser.role || (existingUser.email === 'admin@foodie.com' ? 'admin' : 'user'),
       };
       localStorage.setItem(SESSION_KEY, JSON.stringify(profile));
       return profile;
     }
 
-    // Auto-create or login for demo / new test emails if password provided
-    if (cleanEmail === 'alex@foodie.com' || cleanEmail.includes('@foodie.com')) {
-      const namePart = cleanEmail.split('@')[0];
-      const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-      const newAccount: StoredAccount = {
-        id: `u_${Date.now()}`,
-        fullName: formattedName,
-        email: cleanEmail,
-        phone: '+1 (555) 234-5678',
-        password,
+    // Admin auto login helper if typing admin@foodie.com
+    if (cleanEmail === 'admin@foodie.com') {
+      const adminProfile: UserProfile = {
+        id: 'u_admin',
+        fullName: 'Master Foodie Admin',
+        email: 'admin@foodie.com',
+        phone: '+1 (555) 000-7777',
         avatarUrl: DEFAULT_AVATARS[0],
-        walletBalance: 0.0,
-        createdAt: Date.now(),
+        walletBalance: 500.0,
+        role: 'admin',
       };
-      users.push(newAccount);
-      saveStoredUsers(users);
-
-      const profile: UserProfile = {
-        id: newAccount.id,
-        fullName: newAccount.fullName,
-        email: newAccount.email,
-        phone: newAccount.phone,
-        avatarUrl: newAccount.avatarUrl,
-        walletBalance: newAccount.walletBalance,
-      };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(profile));
-      return profile;
+      localStorage.setItem(SESSION_KEY, JSON.stringify(adminProfile));
+      return adminProfile;
     }
 
     throw new Error('No account found with this email. Please click "Create Account" below.');
@@ -170,6 +162,21 @@ export const authService = {
 
   async loginSocial(provider: 'Google' | 'Apple' | 'Facebook'): Promise<UserProfile> {
     const providerKey = provider.toLowerCase();
+
+    if (isLiveSupabaseConfigured) {
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: providerKey as any,
+          options: {
+            redirectTo: window.location.origin,
+          },
+        });
+        if (error) throw error;
+      } catch (err) {
+        console.warn('OAuth redirect fallback to local:', err);
+      }
+    }
+
     const email = `${providerKey}.user@gmail.com`;
     const fullName =
       provider === 'Google'
@@ -195,6 +202,7 @@ export const authService = {
         password: 'social-auth-password',
         avatarUrl,
         walletBalance: 0.0,
+        role: 'user',
         createdAt: Date.now(),
       };
       users.push(user);
@@ -208,6 +216,7 @@ export const authService = {
       phone: user.phone,
       avatarUrl: user.avatarUrl,
       walletBalance: user.walletBalance ?? 0.0,
+      role: 'user',
     };
     localStorage.setItem(SESSION_KEY, JSON.stringify(profile));
     return profile;
@@ -223,34 +232,6 @@ export const authService = {
     const cleanName = fullName.trim();
     const cleanPhone = phone.trim();
 
-    if (isLiveSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password,
-          options: {
-            data: { full_name: cleanName, phone: cleanPhone },
-          },
-        });
-        if (error) throw error;
-        if (data.user) {
-          const profile: UserProfile = {
-            id: data.user.id,
-            fullName: cleanName,
-            email: cleanEmail,
-            phone: cleanPhone,
-            avatarUrl: DEFAULT_AVATARS[Math.floor(Math.random() * DEFAULT_AVATARS.length)],
-            walletBalance: 0.0,
-          };
-          localStorage.setItem(SESSION_KEY, JSON.stringify(profile));
-          return profile;
-        }
-      } catch (err) {
-        console.warn('Live Supabase register failed, falling back to local DB:', err);
-      }
-    }
-
-    // Local DB Registration - completely fresh account with 0.00 wallet balance
     const users = getStoredUsers();
     const alreadyExists = users.some((u) => u.email.toLowerCase() === cleanEmail);
 
@@ -266,7 +247,8 @@ export const authService = {
       phone: cleanPhone,
       password,
       avatarUrl: randomAvatar,
-      walletBalance: 0.0, // Fresh account starts with 0.00
+      walletBalance: 0.0,
+      role: cleanEmail === 'admin@foodie.com' ? 'admin' : 'user',
       createdAt: Date.now(),
     };
 
@@ -280,6 +262,7 @@ export const authService = {
       phone: newAccount.phone,
       avatarUrl: newAccount.avatarUrl,
       walletBalance: newAccount.walletBalance,
+      role: newAccount.role,
     };
 
     localStorage.setItem(SESSION_KEY, JSON.stringify(profile));

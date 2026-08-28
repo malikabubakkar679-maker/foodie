@@ -11,6 +11,9 @@ export type ProductSizeOption = {
   inches: string;
   extraPrice: number;
   imageUrl?: string;
+  volumeUnit?: 'ml' | 'L';
+  volumeValue?: string;
+  portionName?: string;
 };
 
 export type CrustOption = {
@@ -94,6 +97,8 @@ export type Order = {
   driverName: string;
   driverPhone: string;
   createdAt: string;
+  courierProgress?: number;
+  adminNotes?: string;
 };
 
 export type UserProfile = {
@@ -103,6 +108,7 @@ export type UserProfile = {
   phone: string;
   avatarUrl: string;
   walletBalance: number;
+  role?: 'user' | 'admin';
 };
 
 export type ChatMessage = {

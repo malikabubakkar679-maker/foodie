@@ -3,6 +3,28 @@ import { FoodCategory, Product } from '@/types/food.types';
 import { foodService } from '@/services/foodService';
 import { INITIAL_CATEGORIES, INITIAL_PRODUCTS } from '@/data/initialData';
 
+const PRODUCTS_DB_KEY = 'foodie_custom_products_db';
+
+const getStoredProducts = (): Product[] => {
+  try {
+    const raw = localStorage.getItem(PRODUCTS_DB_KEY);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.warn('Failed to load local products:', e);
+  }
+  return INITIAL_PRODUCTS;
+};
+
+const saveStoredProducts = (products: Product[]) => {
+  try {
+    localStorage.setItem(PRODUCTS_DB_KEY, JSON.stringify(products));
+  } catch (e) {
+    console.warn('Failed to save local products:', e);
+  }
+};
+
 interface FoodState {
   categories: FoodCategory[];
   products: Product[];
@@ -16,6 +38,9 @@ interface FoodState {
   selectedDetailProduct: Product | null;
   isLoading: boolean;
   fetchData: () => Promise<void>;
+  addProduct: (product: Product) => void;
+  updateProduct: (id: string, data: Partial<Product>) => void;
+  deleteProduct: (id: string) => void;
   setSelectedCategory: (catId: string) => void;
   setSearchQuery: (q: string) => void;
   setFilterVeg: (val: boolean) => void;
@@ -32,7 +57,7 @@ interface FoodState {
 
 export const useFoodStore = create<FoodState>((set, get) => ({
   categories: INITIAL_CATEGORIES,
-  products: INITIAL_PRODUCTS,
+  products: getStoredProducts(),
   selectedCategory: 'all',
   searchQuery: '',
   filterVeg: false,
@@ -46,14 +71,30 @@ export const useFoodStore = create<FoodState>((set, get) => ({
   fetchData: async () => {
     set({ isLoading: true });
     try {
-      const [cats, prods] = await Promise.all([
-        foodService.getCategories(),
-        foodService.getProducts(),
-      ]);
-      set({ categories: cats, products: prods, isLoading: false });
+      const cats = await foodService.getCategories();
+      const localProds = getStoredProducts();
+      set({ categories: cats, products: localProds, isLoading: false });
     } catch {
       set({ isLoading: false });
     }
+  },
+
+  addProduct: (newProduct) => {
+    const updated = [newProduct, ...get().products];
+    set({ products: updated });
+    saveStoredProducts(updated);
+  },
+
+  updateProduct: (id, data) => {
+    const updated = get().products.map((p) => (p.id === id ? { ...p, ...data } : p));
+    set({ products: updated });
+    saveStoredProducts(updated);
+  },
+
+  deleteProduct: (id) => {
+    const updated = get().products.filter((p) => p.id !== id);
+    set({ products: updated });
+    saveStoredProducts(updated);
   },
 
   setSelectedCategory: (catId) => set({ selectedCategory: catId }),
