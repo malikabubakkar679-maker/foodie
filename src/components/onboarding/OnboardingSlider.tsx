@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Sparkles, FastForward, Flame, Star, ShieldCheck, Zap } from 'lucide-react';
-import pizzaPng from '@/assets/onboarding-pizza.png';
+import { ArrowRight, Sparkles, FastForward } from 'lucide-react';
 import burgerPng from '@/assets/onboarding-burger.png';
 import deliveryPng from '@/assets/onboarding-delivery.png';
 
@@ -15,13 +14,14 @@ const ONBOARDING_PAGES = [
     tag: '🍕 ARTISAN STONE-BAKED PIZZAS',
     heading: 'Your Favorite Food, One Tap Away',
     description: 'Crispy stone-baked dough, fresh buffalo mozzarella, and fragrant Italian herbs handcrafted fresh for you.',
-    image: pizzaPng,
+    image: '/assets/hero-pizza.png',
     bgGradient: 'from-[#FFA000] via-[#FFB300] to-[#FFC107]',
     textColor: 'text-zinc-950',
     subTextColor: 'text-zinc-900/90',
     tagBg: 'bg-white/95 text-amber-950 border-white/70 shadow-sm',
     btnBg: 'bg-zinc-950 hover:bg-zinc-900 text-white shadow-2xl',
     accentBadge: '🔥 100% Buffalo Mozzarella',
+    imgClass: 'max-h-[42vh] sm:max-h-[48vh] w-auto drop-shadow-[0_25px_40px_rgba(0,0,0,0.25)]',
   },
   {
     id: 'burger-page',
@@ -35,6 +35,7 @@ const ONBOARDING_PAGES = [
     tagBg: 'bg-white/95 text-amber-950 border-white/70 shadow-sm',
     btnBg: 'bg-zinc-950 hover:bg-zinc-900 text-white shadow-2xl',
     accentBadge: '⭐ Double Melted Cheddar',
+    imgClass: 'max-h-[40vh] sm:max-h-[46vh] w-auto drop-shadow-[0_25px_40px_rgba(0,0,0,0.25)]',
   },
   {
     id: 'delivery-page',
@@ -48,6 +49,7 @@ const ONBOARDING_PAGES = [
     tagBg: 'bg-white/95 text-amber-950 border-white/70 shadow-sm',
     btnBg: 'bg-zinc-950 hover:bg-zinc-900 text-white shadow-2xl',
     accentBadge: '⚡ Under 25-Min Guarantee',
+    imgClass: 'max-h-[40vh] sm:max-h-[46vh] w-auto drop-shadow-[0_25px_40px_rgba(0,0,0,0.22)]',
   },
 ];
 
@@ -73,7 +75,7 @@ export const OnboardingSlider: React.FC<OnboardingSliderProps> = ({ onComplete }
 
   return (
     <div className="fixed inset-0 z-[9999] w-full h-full select-none overflow-hidden flex flex-col justify-between">
-      {/* FULL SCREEN BACKGROUND GRADIENT */}
+      {/* FULL SCREEN BACKGROUND GRADIENT (THE TRUE BACKGROUND OF THE ENTIRE SCREEN) */}
       <motion.div
         key={currentPage.id + '-bg'}
         initial={{ opacity: 0 }}
@@ -118,7 +120,7 @@ export const OnboardingSlider: React.FC<OnboardingSliderProps> = ({ onComplete }
         </motion.button>
       </div>
 
-      {/* MIDDLE ARTWORK STAGE — GORGEOUS ROUNDED AMBIENT STAGE WITH 3D DROP SHADOWS */}
+      {/* MIDDLE ARTWORK STAGE — NO CIRCLE BACKGROUND, TRANSPARENT CUTOUT FLOATS DIRECTLY ON SCREEN */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-4 overflow-hidden -my-2 sm:my-0">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
@@ -128,17 +130,13 @@ export const OnboardingSlider: React.FC<OnboardingSliderProps> = ({ onComplete }
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.88, y: direction * -40 }}
             transition={{ duration: 0.45, ease: [0.25, 0.8, 0.25, 1] }}
-            className="relative w-full max-w-sm flex items-center justify-center"
+            className="relative w-full max-w-md flex items-center justify-center"
           >
-            {/* Ambient Warm Golden Plate / Halo */}
-            <div className="absolute w-72 h-72 sm:w-80 sm:h-80 rounded-full bg-white/30 backdrop-blur-sm border border-white/40 shadow-inner flex items-center justify-center" />
-            <div className="absolute w-60 h-60 sm:w-68 sm:h-68 rounded-full bg-gradient-to-tr from-amber-400/30 to-yellow-300/20 blur-xl pointer-events-none" />
-
-            {/* Crisp Floating Food Asset */}
+            {/* Pure Transparent Floating Food Artwork */}
             <motion.div
               animate={{
-                y: [0, -10, 0],
-                rotate: [0, 1.5, 0, -1.5, 0],
+                y: [0, -12, 0],
+                rotate: [0, 1.8, 0, -1.8, 0],
               }}
               transition={{
                 duration: 4,
@@ -150,15 +148,15 @@ export const OnboardingSlider: React.FC<OnboardingSliderProps> = ({ onComplete }
               <img
                 src={currentPage.image}
                 alt={currentPage.heading}
-                className="max-h-[38vh] sm:max-h-[44vh] w-auto object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.22)]"
+                className={`select-none object-contain ${currentPage.imgClass}`}
               />
             </motion.div>
 
-            {/* Floating Tag on Artwork */}
+            {/* Floating Quality Tag */}
             <motion.div
               animate={{ y: [0, -6, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-              className="absolute -bottom-2 right-2 sm:right-6 px-3.5 py-1.5 rounded-2xl bg-white/95 backdrop-blur-xl border border-white/80 shadow-lg text-[11px] font-black text-foodie-charcoal flex items-center gap-1.5 z-20"
+              className="absolute -bottom-1 right-3 sm:right-8 px-3.5 py-1.5 rounded-2xl bg-white/95 backdrop-blur-xl border border-white/80 shadow-lg text-[11px] font-black text-foodie-charcoal flex items-center gap-1.5 z-20"
             >
               <span>{currentPage.accentBadge}</span>
             </motion.div>
