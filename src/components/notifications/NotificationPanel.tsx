@@ -17,8 +17,6 @@ export const NotificationPanel: React.FC = () => {
     clearAll,
   } = useNotificationStore();
 
-  if (!isPanelOpen) return null;
-
   const handleNotificationClick = (notif: any) => {
     closePanel();
     openDetailModal(notif);
@@ -26,12 +24,13 @@ export const NotificationPanel: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] overflow-hidden select-none">
-        {/* Frosted Glass Blurred Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+      {isPanelOpen && (
+        <div className="fixed inset-0 z-[9999] overflow-hidden select-none">
+          {/* Frosted Glass Blurred Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
           onClick={closePanel}
           className="fixed inset-0 bg-black/50 backdrop-blur-md"
@@ -179,6 +178,7 @@ export const NotificationPanel: React.FC = () => {
           </motion.div>
         </div>
       </div>
-    </AnimatePresence>
+    )}
+  </AnimatePresence>
   );
 };

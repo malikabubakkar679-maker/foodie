@@ -72,8 +72,6 @@ export const CartDrawer: React.FC = () => {
   const [couponInput, setCouponInput] = useState('');
   const [couponFeedback, setCouponFeedback] = useState<{ success?: boolean; text?: string }>({});
 
-  if (!isCartDrawerOpen) return null;
-
   const subtotal = getSubtotal();
   const deliveryFee = getDeliveryFee();
   const discountAmount = getDiscountAmount();
@@ -107,12 +105,13 @@ export const CartDrawer: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] overflow-hidden select-none">
-        {/* FROSTED GLASS BLURRED BACKDROP */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+      {isCartDrawerOpen && (
+        <div className="fixed inset-0 z-[9999] overflow-hidden select-none">
+          {/* FROSTED GLASS BLURRED BACKDROP */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
           onClick={closeCartDrawer}
           className="fixed inset-0 bg-black/50 backdrop-blur-md"
@@ -417,6 +416,7 @@ export const CartDrawer: React.FC = () => {
           </motion.div>
         </div>
       </div>
-    </AnimatePresence>
+    )}
+  </AnimatePresence>
   );
 };

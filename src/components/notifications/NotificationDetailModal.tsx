@@ -18,8 +18,6 @@ export const NotificationDetailModal: React.FC = () => {
 
   const [copied, setCopied] = React.useState(false);
 
-  if (!isDetailModalOpen || !selectedNotification) return null;
-
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     applyCoupon(code);
@@ -28,6 +26,7 @@ export const NotificationDetailModal: React.FC = () => {
   };
 
   const handlePrimaryAction = () => {
+    if (!selectedNotification) return;
     closeDetailModal();
 
     if (selectedNotification.type === 'auth_prompt') {
@@ -50,12 +49,13 @@ export const NotificationDetailModal: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto select-none">
-        {/* Frosted Glass Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+      {isDetailModalOpen && selectedNotification && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto select-none">
+          {/* Frosted Glass Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           transition={{ duration: 0.22 }}
           onClick={closeDetailModal}
           className="fixed inset-0 bg-black/60 backdrop-blur-xl"
@@ -149,6 +149,7 @@ export const NotificationDetailModal: React.FC = () => {
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    )}
+  </AnimatePresence>
   );
 };

@@ -47,14 +47,12 @@ export const FoodDetailModal: React.FC = () => {
     }
   }, [selectedDetailProduct]);
 
-  if (!selectedDetailProduct) return null;
-
-  const isFav = isFavorite(selectedDetailProduct.id);
+  const isFav = selectedDetailProduct ? isFavorite(selectedDetailProduct.id) : false;
 
   // Dynamic price calculation
-  const basePrice = selectedDetailProduct.basePrice;
+  const basePrice = selectedDetailProduct?.basePrice || 0;
   const sizeExtra = selectedSize ? selectedSize.extraPrice : 0;
-  const crustExtra = selectedCrust.extraPrice;
+  const crustExtra = selectedCrust ? selectedCrust.extraPrice : 0;
   let toppingsExtra = 0;
   selectedToppings.forEach((topId) => {
     const top = INITIAL_TOPPINGS.find((t) => t.id === topId);
@@ -85,7 +83,7 @@ export const FoodDetailModal: React.FC = () => {
 
   // Add to Cart
   const handleAddToCart = () => {
-    if (!selectedSize) return;
+    if (!selectedDetailProduct || !selectedSize) return;
     const toppingsList = Array.from(selectedToppings)
       .map((id) => INITIAL_TOPPINGS.find((t) => t.id === id))
       .filter(Boolean) as ToppingOption[];
@@ -117,16 +115,17 @@ export const FoodDetailModal: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden select-none">
-        {/* FROSTED GLASS BACKDROP */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-          onClick={closeDetailModal}
-          className="fixed inset-0 bg-black/65 backdrop-blur-xl"
-        />
+      {selectedDetailProduct && (
+        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden select-none">
+          {/* FROSTED GLASS BACKDROP */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={closeDetailModal}
+            className="fixed inset-0 bg-black/65 backdrop-blur-xl"
+          />
 
         {/* FULL SCREEN IMMERSIVE MOBILE / DESKTOP MODAL */}
         <motion.div
@@ -452,6 +451,7 @@ export const FoodDetailModal: React.FC = () => {
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    )}
+  </AnimatePresence>
   );
 };

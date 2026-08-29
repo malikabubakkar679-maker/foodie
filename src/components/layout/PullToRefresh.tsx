@@ -119,81 +119,6 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
     }
   };
 
-  // Mouse drag handlers for desktop/testing
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (window.scrollY <= 0 && !isRefreshing && e.button === 0) {
-      startYRef.current = e.clientY;
-      isDraggingRef.current = true;
-      setIsPulling(true);
-      hasTriggeredHapticRef.current = false;
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingRef.current || isRefreshing) return;
-    if (window.scrollY > 0) {
-      isDraggingRef.current = false;
-      setIsPulling(false);
-      setPullY(0);
-      return;
-    }
-
-    const currentY = e.clientY;
-    const deltaY = currentY - startYRef.current;
-
-    if (deltaY > 0) {
-      window.getSelection()?.removeAllRanges();
-      const resistedPull = Math.min(MAX_PULL, Math.pow(deltaY, 0.84) * 0.76);
-      setPullY(resistedPull);
-    }
-  };
-
-  const handleMouseUp = () => {
-    if (!isDraggingRef.current) return;
-    isDraggingRef.current = false;
-
-    if (pullY >= THRESHOLD && !isRefreshing) {
-      setPullY(52);
-      executeRefresh();
-    } else {
-      setIsPulling(false);
-      setPullY(0);
-    }
-  };
-
-  // Trackpad wheel pull down
-  useEffect(() => {
-    let wheelDelta = 0;
-    let wheelTimeout: NodeJS.Timeout;
-
-    const handleWheel = (e: WheelEvent) => {
-      if (window.scrollY <= 0 && e.deltaY < 0 && !isRefreshing) {
-        setIsPulling(true);
-        wheelDelta += Math.abs(e.deltaY) * 0.45;
-        const currentPull = Math.min(MAX_PULL, Math.pow(wheelDelta, 0.84) * 0.76);
-        setPullY(currentPull);
-
-        clearTimeout(wheelTimeout);
-        wheelTimeout = setTimeout(() => {
-          if (wheelDelta >= THRESHOLD && !isRefreshing) {
-            setPullY(52);
-            executeRefresh();
-          } else {
-            setIsPulling(false);
-            setPullY(0);
-          }
-          wheelDelta = 0;
-        }, 220);
-      }
-    };
-
-    window.addEventListener('wheel', handleWheel, { passive: true });
-    return () => {
-      window.removeEventListener('wheel', handleWheel);
-      clearTimeout(wheelTimeout);
-    };
-  }, [isRefreshing, executeRefresh]);
-
   const pullPercentage = Math.min(100, Math.round((pullY / THRESHOLD) * 100));
   const isPastThreshold = pullY >= THRESHOLD;
 
@@ -203,9 +128,6 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
       className={`relative min-h-screen flex flex-col ${pullY > 0 ? 'select-none' : ''}`}
     >
       {/* LUXURY FLOATING PULL / REFRESH BADGE */}

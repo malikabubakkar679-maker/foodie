@@ -30,8 +30,6 @@ export const CheckoutModal: React.FC = () => {
   const [newTitle, setNewTitle] = useState('');
   const [newAddress, setNewAddress] = useState('');
 
-  if (!isCheckoutModalOpen) return null;
-
   const subtotal = getSubtotal();
   const deliveryFee = getDeliveryFee();
   const discount = getDiscountAmount();

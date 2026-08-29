@@ -122,8 +122,6 @@ export const LiveTrackingModal: React.FC = () => {
 
   const riderCoord = getCoordinatesAlongPath(riderProgress);
 
-  if (!isTrackingModalOpen || !activeTrackingOrder) return null;
-
   const steps = [
     { label: 'Confirmed', desc: 'Kitchen accepted your feast', time: '12:02 PM' },
     { label: 'In Kitchen Oven', desc: 'Chefs are baking handcrafted dough', time: '12:08 PM' },
@@ -155,13 +153,14 @@ export const LiveTrackingModal: React.FC = () => {
     setTipAmount(amount);
     showToast({
       title: `$${amount}.00 Tip Added! ❤️`,
-      message: `Thank you for tipping Courier ${activeTrackingOrder.driverName || 'Alex'}!`,
+      message: `Thank you for tipping Courier ${activeTrackingOrder?.driverName || 'Alex'}!`,
       type: 'welcome',
       icon: '⭐',
     });
   };
 
   const handleSimulateNextStep = () => {
+    if (!activeTrackingOrder) return;
     const currentStep = activeTrackingOrder.step;
     const nextStep = (currentStep + 1) % 4;
     useOrderStore.setState((state) => {
@@ -182,7 +181,8 @@ export const LiveTrackingModal: React.FC = () => {
       maxWidth="max-w-2xl"
       showCloseButton={true}
     >
-      <div className="space-y-4 select-none">
+      {activeTrackingOrder ? (
+        <div className="space-y-4 select-none">
         {/* TOP STATUS & LIVE ETA HEADER */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-orange-500/10 rounded-3xl border border-amber-300/40 backdrop-blur-md">
           <div className="flex items-center gap-3">
@@ -655,6 +655,7 @@ export const LiveTrackingModal: React.FC = () => {
           Done Viewing Live Tracking
         </Button>
       </div>
+      ) : null}
     </Modal>
   );
 };

@@ -95,8 +95,6 @@ export const AuthModal: React.FC = () => {
     },
   });
 
-  if (!isAuthModalOpen) return null;
-
   const triggerCelebration = () => {
     try {
       confetti({
@@ -181,12 +179,13 @@ export const AuthModal: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[99999] overflow-y-auto flex items-center justify-center p-3 sm:p-4 select-none">
-        {/* FROSTED GLASS BACKDROP */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+      {isAuthModalOpen && (
+        <div className="fixed inset-0 z-[99999] overflow-y-auto flex items-center justify-center p-3 sm:p-4 select-none">
+          {/* FROSTED GLASS BACKDROP */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
           onClick={handleClose}
           className="fixed inset-0 bg-black/65 backdrop-blur-xl"
@@ -712,6 +711,7 @@ export const AuthModal: React.FC = () => {
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    )}
+  </AnimatePresence>
   );
 };
