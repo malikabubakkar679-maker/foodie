@@ -1,15 +1,15 @@
 import { FoodCategory, Product, CrustOption, ToppingOption, Address, Order } from '@/types/food.types';
 
 export const INITIAL_CATEGORIES: FoodCategory[] = [
-  { id: 'all', name: 'All Foods', icon: 'Flame' },
-  { id: 'pizza', name: 'Artisan Pizza', icon: 'Pizza' },
-  { id: 'burgers', name: 'Smash Burgers', icon: 'Sandwich' },
-  { id: 'chicken', name: 'Crispy Chicken', icon: 'Drumstick' },
-  { id: 'fries', name: 'Fries & Sides', icon: 'CookingPot' },
-  { id: 'pasta', name: 'Italian Pasta', icon: 'Soup' },
-  { id: 'drinks', name: 'Cool Drinks', icon: 'Coffee' },
-  { id: 'desserts', name: 'Sweet Desserts', icon: 'Cake' },
-  { id: 'deals', name: 'Super Deals', icon: 'Tag' },
+  { id: 'all', name: 'All Foods', icon: 'Flame', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300&auto=format&fit=crop&q=80' },
+  { id: 'pizza', name: 'Artisan Pizza', icon: 'Pizza', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300&auto=format&fit=crop&q=80' },
+  { id: 'burgers', name: 'Smash Burgers', icon: 'Sandwich', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&auto=format&fit=crop&q=80' },
+  { id: 'chicken', name: 'Crispy Chicken', icon: 'Drumstick', image: 'https://images.unsplash.com/photo-1562967914-608f82629710?w=300&auto=format&fit=crop&q=80' },
+  { id: 'fries', name: 'Fries & Sides', icon: 'CookingPot', image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=300&auto=format&fit=crop&q=80' },
+  { id: 'pasta', name: 'Italian Pasta', icon: 'Soup', image: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281691?w=300&auto=format&fit=crop&q=80' },
+  { id: 'drinks', name: 'Cool Drinks', icon: 'Coffee', image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=300&auto=format&fit=crop&q=80' },
+  { id: 'desserts', name: 'Sweet Desserts', icon: 'Cake', image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=300&auto=format&fit=crop&q=80' },
+  { id: 'deals', name: 'Super Deals', icon: 'Tag', image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&auto=format&fit=crop&q=80' },
 ];
 
 export const INITIAL_CRUSTS: CrustOption[] = [
@@ -747,7 +747,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     calories: 1200,
     ingredients: ['2 Large Pizzas', '10 Jumbo Wings', 'Large Fries', '2L Soda'],
     isPopular: true,
-    imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
     sizes: [
       { id: 'small', name: 'Feeds 4-5', inches: 'Complete Party Box', extraPrice: 0.0 },
       { id: 'large', name: 'Feeds 7-8', inches: 'Double Mega Feast', extraPrice: 18.00 },
@@ -765,7 +765,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     calories: 890,
     ingredients: ['2 Angus Burgers', '2 Truffle Fries', '2 Cool Drinks'],
     isPopular: true,
-    imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=600&auto=format&fit=crop&q=80',
     sizes: [
       { id: 'small', name: 'Duo Meal (2 People)', inches: 'Standard Combo', extraPrice: 0.0 },
       { id: 'large', name: 'Trio Meal (3 People)', inches: '3 Burgers & 3 Fries', extraPrice: 10.00 },
@@ -783,7 +783,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     calories: 950,
     ingredients: ['1 Large Pizza', '8 Wings', 'Mozzarella Sticks', '2 Drinks'],
     isPopular: true,
-    imageUrl: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
     sizes: [
       { id: 'small', name: 'Standard Game Box', inches: 'Feeds 2-3', extraPrice: 0.0 },
       { id: 'large', name: 'Large Game Box', inches: 'Feeds 4-5', extraPrice: 12.00 },
@@ -800,7 +800,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     prepTime: 18,
     calories: 850,
     ingredients: ['2 Pastas', '2 Molten Lava Cakes', 'Garlic Bread'],
-    imageUrl: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281691?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&auto=format&fit=crop&q=80',
     sizes: [
       { id: 'small', name: 'Romantic Duo', inches: 'Feeds 2', extraPrice: 0.0 },
       { id: 'large', name: 'Family Pasta Platter', inches: 'Feeds 4', extraPrice: 15.00 },
@@ -817,7 +817,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     prepTime: 12,
     calories: 680,
     ingredients: ['1 Pizza or Burger', 'Loaded Bacon Fries', '1 Cool Drink'],
-    imageUrl: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=600&auto=format&fit=crop&q=80',
     sizes: [
       { id: 'small', name: 'Solo Box', inches: 'Feeds 1', extraPrice: 0.0 },
       { id: 'medium', name: 'Hungry Solo Monster', inches: 'Upsized', extraPrice: 3.50 },

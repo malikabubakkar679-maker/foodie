@@ -191,8 +191,11 @@ export const FoodDetailModal: React.FC = () => {
                 className="relative shrink-0 flex items-center justify-center select-none"
               >
                 <motion.img
-                  src={selectedDetailProduct.imageUrl}
+                  src={selectedDetailProduct.imageUrl || '/assets/hero-pizza.png'}
                   alt={selectedDetailProduct.name}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/assets/hero-pizza.png';
+                  }}
                   animate={{
                     y: [0, -6, 0],
                     rotate: [0, 8, -8, 0],

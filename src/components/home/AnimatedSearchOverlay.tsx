@@ -124,8 +124,11 @@ export const AnimatedSearchOverlay: React.FC<AnimatedSearchOverlayProps> = ({ is
                     className="flex items-center gap-3.5 p-3 rounded-2xl bg-white/75 hover:bg-white border border-white/80 hover:border-foodie-yellow shadow-sm hover:shadow-md cursor-pointer transition-all group"
                   >
                     <img
-                      src={product.imageUrl}
+                      src={product.imageUrl || '/assets/hero-pizza.png'}
                       alt={product.name}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/assets/hero-pizza.png';
+                      }}
                       className="w-14 h-14 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform"
                     />
                     <div className="flex-1 min-w-0">

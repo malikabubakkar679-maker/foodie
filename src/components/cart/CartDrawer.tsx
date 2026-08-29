@@ -226,8 +226,11 @@ export const CartDrawer: React.FC = () => {
                       {/* Food Thumbnail */}
                       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-foodie-app border border-foodie-border/60 shrink-0 shadow-inner flex items-center justify-center">
                         <img
-                          src={item.product.imageUrl}
+                          src={item.product.imageUrl || '/assets/hero-pizza.png'}
                           alt={item.product.name}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/assets/hero-pizza.png';
+                          }}
                           className="w-full h-full object-cover"
                         />
                       </div>

@@ -67,9 +67,12 @@ export const FoodCard: React.FC<FoodCardProps> = ({ product }) => {
       <div className="relative w-full h-36 sm:h-44 rounded-2xl overflow-hidden mb-2.5 bg-gradient-to-b from-white/40 to-foodie-yellow-soft/30 flex items-center justify-center">
         {/* Crisp Food Image */}
         <motion.img
-          src={product.imageUrl}
+          src={product.imageUrl || '/assets/hero-pizza.png'}
           alt={product.name}
           loading="lazy"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/assets/hero-pizza.png';
+          }}
           className="w-full h-full object-contain p-2 group-hover:scale-108 transition-transform duration-300 drop-shadow-md"
         />
 
