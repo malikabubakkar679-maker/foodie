@@ -84,13 +84,13 @@ export const OnboardingSlider: React.FC<OnboardingSliderProps> = ({ onComplete }
 
   const currentPage = ONBOARDING_PAGES[currentIndex];
 
-  // 1. Slow, buttery-smooth rolling wheel entrance variant exclusively for Pizza
+  // 1. Slow, ultra buttery-smooth rolling wheel entrance variant exclusively for Pizza
   const pizzaWheelVariants = {
     initial: (customDir: number) => ({
       opacity: 0,
-      x: customDir > 0 ? '110vw' : '-110vw',
-      rotate: customDir > 0 ? 540 : -540,
-      scale: 0.8,
+      x: customDir > 0 ? '115vw' : '-115vw',
+      rotate: customDir > 0 ? 640 : -640,
+      scale: 0.82,
     }),
     animate: {
       opacity: 1,
@@ -98,22 +98,22 @@ export const OnboardingSlider: React.FC<OnboardingSliderProps> = ({ onComplete }
       rotate: 0,
       scale: 1,
       transition: {
-        x: { duration: 1.4, ease: [0.18, 0.9, 0.32, 1] },
-        rotate: { duration: 1.4, ease: [0.18, 0.9, 0.32, 1] },
-        scale: { duration: 1.2, ease: [0.18, 0.9, 0.32, 1] },
-        opacity: { duration: 0.5 },
+        x: { duration: 2.2, ease: [0.22, 1, 0.36, 1] },
+        rotate: { duration: 2.2, ease: [0.22, 1, 0.36, 1] },
+        scale: { duration: 1.9, ease: [0.22, 1, 0.36, 1] },
+        opacity: { duration: 0.8, ease: 'easeOut' },
       },
     },
     exit: (customDir: number) => ({
       opacity: 0,
-      x: customDir > 0 ? '-100vw' : '100vw',
-      rotate: customDir > 0 ? -480 : 480,
-      scale: 0.8,
+      x: customDir > 0 ? '-105vw' : '105vw',
+      rotate: customDir > 0 ? -540 : 540,
+      scale: 0.82,
       transition: {
-        x: { duration: 0.75, ease: [0.4, 0, 0.2, 1] },
-        rotate: { duration: 0.75, ease: [0.4, 0, 0.2, 1] },
-        scale: { duration: 0.6 },
-        opacity: { duration: 0.35 },
+        x: { duration: 1.0, ease: [0.32, 0, 0.2, 1] },
+        rotate: { duration: 1.0, ease: [0.32, 0, 0.2, 1] },
+        scale: { duration: 0.8, ease: [0.32, 0, 0.2, 1] },
+        opacity: { duration: 0.45 },
       },
     }),
   };
@@ -221,7 +221,7 @@ export const OnboardingSlider: React.FC<OnboardingSliderProps> = ({ onComplete }
                 opacity: [0.28, 0.42, 0.28],
               }}
               transition={{
-                duration: 3,
+                duration: 5.2,
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
@@ -232,11 +232,11 @@ export const OnboardingSlider: React.FC<OnboardingSliderProps> = ({ onComplete }
             {currentPage.animationType === 'pizza-wheel' && (
               <motion.div
                 animate={{
-                  y: [0, -8, 0],
-                  rotate: [0, 2, 0, -2, 0],
+                  y: [0, -10, 0],
+                  rotate: [0, 1.8, 0, -1.8, 0],
                 }}
                 transition={{
-                  duration: 4.2,
+                  duration: 5.2,
                   repeat: Infinity,
                   ease: 'easeInOut',
                 }}

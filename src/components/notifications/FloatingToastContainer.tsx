@@ -15,26 +15,36 @@ export const FloatingToastContainer: React.FC = () => {
         {activeToasts.map((toast) => (
           <motion.div
             key={toast.id}
-            initial={{ opacity: 0, y: -35, scale: 0.92 }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0.75, bottom: 0.15 }}
+            onDragEnd={(_, info) => {
+              // If user dragged up or flicked upwards with speed, dismiss it immediately
+              if (info.offset.y < -30 || info.velocity.y < -200) {
+                dismissToast(toast.id);
+              }
+            }}
+            initial={{ opacity: 0, y: -45, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.92, transition: { duration: 0.18 } }}
+            exit={{ opacity: 0, y: -60, scale: 0.9, transition: { duration: 0.22, ease: 'easeInOut' } }}
             transition={{ type: 'spring', damping: 24, stiffness: 340 }}
-            onClick={() => {
+            onClick={(e) => {
+              // Only open detail modal if not dragging
               dismissToast(toast.id);
               openDetailModal(toast);
             }}
-            className="pointer-events-auto w-full bg-white/90 hover:bg-white/95 backdrop-blur-2xl border border-white/95 rounded-2xl py-3 px-4 sm:py-3.5 sm:px-4.5 shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16)] flex items-center gap-3 relative overflow-hidden group cursor-pointer transition-all hover:scale-[1.01]"
+            className="pointer-events-auto w-full bg-white/90 hover:bg-white/95 backdrop-blur-2xl border border-white/95 rounded-2xl py-3 px-4 sm:py-3.5 sm:px-4.5 shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16)] flex items-center gap-3 relative overflow-hidden group cursor-grab active:cursor-grabbing select-none touch-none transition-shadow hover:shadow-[0_20px_40px_-6px_rgba(0,0,0,0.2)]"
           >
             {/* Left Glass Accent Gradient Bar */}
             <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-foodie-yellow via-foodie-amber to-foodie-orange" />
 
             {/* Left Icon Badge (Slightly larger) */}
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-foodie-yellow to-foodie-amber-dark flex items-center justify-center text-base shrink-0 shadow-xs ml-0.5">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-foodie-yellow to-foodie-amber-dark flex items-center justify-center text-base shrink-0 shadow-xs ml-0.5 pointer-events-none">
               {toast.icon || '🔔'}
             </div>
 
             {/* Message Body (Clear, Larger Typography & Comfortable Height) */}
-            <div className="flex-1 min-w-0 pr-1">
+            <div className="flex-1 min-w-0 pr-1 pointer-events-none">
               <div className="flex items-center gap-2 leading-tight">
                 <span className="text-xs sm:text-sm font-black text-foodie-charcoal truncate block">
                   {toast.title}
@@ -49,7 +59,7 @@ export const FloatingToastContainer: React.FC = () => {
             </div>
 
             {/* Tap arrow indicator */}
-            <ChevronRight className="w-4 h-4 text-foodie-muted/70 group-hover:text-foodie-amber-dark group-hover:translate-x-0.5 transition-all shrink-0" />
+            <ChevronRight className="w-4 h-4 text-foodie-muted/70 group-hover:text-foodie-amber-dark group-hover:translate-x-0.5 transition-all shrink-0 pointer-events-none" />
 
             {/* Quick Dismiss Button */}
             <button
